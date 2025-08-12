@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Stats Poster Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- dom-to-image for image download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a;
+            color: #e5e7eb;
+        }
+        .stats-card-container {
+            width: 189mm;
+            height: 297mm;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            position: relative;
+            background-color: #fcd34d;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .stats-card-bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            /* The backdrop-filter is removed from here as we now bake it into the image */
+        }
+        .profile-image-container {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #fff;
+            position: relative;
+            background-color: #4b5563;
+        }
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .genre-checkbox:checked + label {
+            background-color: #fcd34d;
+            color: #1a1a1a;
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center min-h-screen">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl bg-gray-900 p-6 rounded-xl shadow-lg mb-8">
+        <h1 class="text-3xl font-bold text-center mb-2 text-yellow-500">Stats Poster Generator</h1>
+        <p class="text-center text-gray-400 mb-6">Apna data daal kar ek zabardast aesthetic poster banao!</p>
+
+        <!-- Form for Data Input -->
+        <form id="stats-form" class="space-y-6">
+            <!-- Theme Selection & Customization -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="themeSelector" class="block text-sm font-medium text-gray-300">Theme Chunein</label>
+                    <select id="themeSelector" class="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2">
+                        <option value="default">Default</option>
+                        <option value="dark">Dark Theme</option>
+                        <option value="vibrant">Vibrant Theme</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="textColor" class="block text-sm font-medium text-gray-300">Text Color</label>
+                    <input type="color" id="textColor" value="#000000" class="mt-1 block w-full h-10 bg-gray-800 rounded-md border-gray-700 p-1">
+                </div>
+            </div>
+
+            <!-- Poster Customization -->
+            <div class="space-y-4">
+                <div>
+                    <label for="posterBgImage" class="block text-sm font-medium text-gray-300">Poster Background Image</label>
+                    <input type="file" id="posterBgImage" accept="image/*" class="mt-1 block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="posterBgColor" class="block text-sm font-medium text-gray-300">Poster Background Color</label>
+                        <input type="color" id="posterBgColor" value="#fcd34d" class="mt-1 block w-full h-10 bg-gray-800 rounded-md border-gray-700 p-1">
+                    </div>
+                    <div>
+                        <label for="bgOpacity" class="block text-sm font-medium text-gray-300">Background Opacity</label>
+                        <input type="range" id="bgOpacity" min="0" max="1" step="0.1" value="0.5" class="mt-1 w-full accent-yellow-500">
+                    </div>
+                    <div>
+                        <label for="bgBlur" class="block text-sm font-medium text-gray-300">Background Blur (px)</label>
+                        <input type="range" id="bgBlur" min="0" max="20" step="1" value="5" class="mt-1 w-full accent-yellow-500">
+                    </div>
+                </div>
+                <div>
+                    <label for="borderColor" class="block text-sm font-medium text-gray-300">Border Color</label>
+                    <input type="color" id="borderColor" value="#000000" class="mt-1 block w-full h-10 bg-gray-800 rounded-md border-gray-700 p-1">
+                </div>
+            </div>
+            
+            <!-- Name & Profile Picture Inputs -->
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="flex-1 space-y-4">
+                    <div>
+                        <label for="userName" class="block text-sm font-medium text-gray-300">Aapka Naam</label>
+                        <input type="text" id="userName" class="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm focus:border-yellow-500 focus:ring-yellow-500 p-2" placeholder="Jaise: Kanishk Harit">
+                    </div>
+                    <div>
+                        <label for="profileImage" class="block text-sm font-medium text-gray-300">Profile Picture</label>
+                        <input type="file" id="profileImage" accept="image/*" class="mt-1 block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Badge Selection -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label for="badgeSelector" class="block text-sm font-medium text-gray-300">Badge Chunein</label>
+                    <button type="button" id="suggest-badge-btn" class="text-yellow-500 text-sm font-semibold hover:underline">✨ Badge Suggest Karo</button>
+                </div>
+                <select id="badgeSelector" class="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2">
+                    <option value="">-- Koi Ek Chunein --</option>
+                    <option value="Binge King">Binge King</option>
+                    <option value="Night Owl">Night Owl</option>
+                    <option value="Anime Sensei">Anime Sensei</option>
+                    <option value="Plot Twist Master">Plot Twist Master</option>
+                    <option value="Sci-Fi Commander">Sci-Fi Commander</option>
+                    <option value="Drama Slayer">Drama Slayer</option>
+                    <option value="Mystery Hunter">Mystery Hunter</option>
+                    <option value="Action Beast">Action Beast</option>
+                    <option value="Fantasy Wizard">Fantasy Wizard</option>
+                    <option value="Rom-Com Pirate">Rom-Com Pirate</option>
+                    <option value="One-Sit Warrior">One-Sit Warrior</option>
+                    <option value="Cliffhanger Victim">Cliffhanger Victim</option>
+                    <option value="Spoiler Samurai">Spoiler Samurai</option>
+                    <option value="Villain Lover">Villain Lover</option>
+                    <option value="Mind-Bender">Mind-Bender</option>
+                    <option value="Horror Survivor">Horror Survivor</option>
+                    <option value="Retro Rewind">Retro Rewind</option>
+                    <option value="Subtitles Samurai">Subtitles Samurai</option>
+                    <option value="Meme Reactor">Meme Reactor</option>
+                    <option value="Legendary Finisher">Legendary Finisher</option>
+                </select>
+            </div>
+
+            <!-- Stats Inputs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label for="episodes" class="block text-sm font-medium text-gray-300">Dekhe hue Episodes (संख्या)</label>
+                    <input type="number" id="episodes" class="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Jaise: 5300">
+                </div>
+                <div>
+                    <label for="movies" class="block text-sm font-medium text-gray-300">Dekhi hui Movies (संख्या)</label>
+                    <input type="number" id="movies" class="mt-1 block w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Jaise: 367">
+                </div>
+            </div>
+
+            <!-- Time Inputs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300">Total Show Time</label>
+                    <div class="flex items-center gap-2 mt-1">
+                        <input type="number" id="showTimeMonth" class="w-1/3 rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Mahine">
+                        <input type="number" id="showTimeDay" class="w-1/3 rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Din">
+                        <input type="number" id="showTimeHour" class="w-1/3 rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Ghante">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300">Total Movie Time</label>
+                    <div class="flex items-center gap-2 mt-1">
+                        <input type="number" id="movieTimeMonth" class="w-1/3 rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Mahine">
+                        <input type="number" id="movieTimeDay" class="w-1/3 rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Din">
+                        <input type="number" id="movieTimeHour" class="w-1/3 rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="Ghante">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Genres -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Top Favourite Genre</label>
+                <div id="genre-checkboxes" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    <!-- Genres will be dynamically added here as checkboxes -->
+                </div>
+            </div>
+
+            <!-- Favorites Section -->
+            <div>
+                <h3 class="text-xl font-bold text-center text-yellow-500 mb-4">Favourites</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300">Top 3 Movies</label>
+                        <input type="text" id="favMovie1" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="1. Movie">
+                        <input type="text" id="favMovie2" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="2. Movie">
+                        <input type="text" id="favMovie3" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="3. Movie">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300">Top 3 TV Shows</label>
+                        <input type="text" id="favShow1" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="1. TV Show">
+                        <input type="text" id="favShow2" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="2. TV Show">
+                        <input type="text" id="favShow3" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="3. TV Show">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300">Top 3 Anime</label>
+                        <input type="text" id="favAnime1" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="1. Anime">
+                        <input type="text" id="favAnime2" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="2. Anime">
+                        <input type="text" id="favAnime3" class="mt-1 w-full rounded-md border-gray-700 bg-gray-800 text-white shadow-sm p-2" placeholder="3. Anime">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <button type="submit" id="generate-btn" class="w-full flex justify-center py-3 px-4 rounded-md shadow-sm text-base font-medium text-gray-900 bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-all duration-300">
+                Stats Poster Banao
+            </button>
+        </form>
+    </div>
+
+    <!-- The preview of the poster is generated here -->
+    <div id="poster-preview-wrapper" class="hidden mt-8">
+        <div id="stats-card-container-preview" class="stats-card-container relative p-6 md:p-10">
+            <div id="stats-card-bg-overlay-preview" class="absolute inset-0 z-0"></div>
+            
+            <div id="stats-card-content-preview" class="relative z-10 flex flex-col justify-between h-full">
+                <!-- Part 1: Profile & Main Stats -->
+                <div class="flex flex-col items-center mb-6 flex-grow-0">
+                    <div class="flex flex-col items-center">
+                        <div id="profile-image-container-preview" class="profile-image-container mb-4">
+                            <img id="user-image-preview" src="https://placehold.co/180x180/4b5563/ffffff?text=Image" alt="User Profile" class="profile-image">
+                        </div>
+                        <h2 id="card-name-preview" class="text-3xl md:text-5xl font-extrabold text-center"></h2>
+                        <div id="card-badge-preview" class="mt-2 text-yellow-500 text-xl font-bold"></div>
+                        <div class="border-b-4 border-yellow-500 w-24 md:w-32 mt-2"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-y-4 md:gap-8 text-center mt-6 w-full">
+                        <div>
+                            <p class="text-lg uppercase font-semibold">Episodes</p>
+                            <p id="card-episodes-preview" class="text-4xl md:text-6xl font-black mt-2"></p>
+                        </div>
+                        <div>
+                            <p class="text-lg uppercase font-semibold">Movies</p>
+                            <p id="card-movies-preview" class="text-4xl md:text-6xl font-black mt-2"></p>
+                        </div>
+                        <div>
+                            <p class="text-lg uppercase font-semibold">Show Time</p>
+                            <p id="card-show-time-preview" class="text-xl md:text-2xl font-bold mt-2"></p>
+                        </div>
+                        <div>
+                            <p class="text-lg uppercase font-semibold">Movie Time</p>
+                            <p id="card-movie-time-preview" class="text-xl md:text-2xl font-bold mt-2"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part 2: Genres -->
+                <div id="genres-section-preview" class="my-6 flex-grow-0">
+                    <p class="text-xl uppercase font-extrabold text-center mb-2">Top Favourite Genre</p>
+                    <div id="card-genres-preview" class="flex flex-wrap justify-center gap-2"></div>
+                </div>
+                
+                <!-- Part 3: Favourites -->
+                <div id="favourites-section-preview" class="my-6 flex-grow-0">
+                    <p class="text-xl uppercase font-extrabold text-center mb-4">Favourites</p>
+                    <div class="flex flex-row justify-around items-start w-full">
+                        <div class="text-center">
+                            <h4 class="text-lg font-semibold mb-2">Movies</h4>
+                            <ul id="card-fav-movies-preview" class="space-y-2"></ul>
+                        </div>
+                        <div class="text-center">
+                            <h4 class="text-lg font-semibold mb-2">TV Shows</h4>
+                            <ul id="card-fav-shows-preview" class="space-y-2"></ul>
+                        </div>
+                        <div class="text-center">
+                            <h4 class="text-lg font-semibold mb-2">Anime</h4>
+                            <ul id="card-fav-anime-preview" class="space-y-2"></ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- Watermark text -->
+                <div class="text-center text-gray-700 mt-4 relative z-10 flex-grow-0">
+                    <p class="text-sm">Made with Custom Stats Generator</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Box -->
+    <div id="message-box" class="fixed bottom-4 right-4 p-4 rounded-md shadow-lg text-white bg-green-500 hidden transition-all duration-300">
+        Message
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const genres = ['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Fantasy', 'Horror', 'Romance', 'Thriller', 'Animation', 'Documentary', 'Mystery', 'Crime', 'Adventure', 'Musical', 'Biography'];
+            const genreCheckboxes = document.getElementById('genre-checkboxes');
+            genres.forEach((genre, index) => {
+                const genreId = `genre-${index}`;
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <input type="checkbox" id="${genreId}" name="genres" value="${genre}" class="hidden genre-checkbox">
+                    <label for="${genreId}" class="block w-full py-2 px-4 text-sm font-medium text-center rounded-md cursor-pointer transition-colors duration-200 bg-gray-800 hover:bg-yellow-500 hover:text-gray-900">
+                        ${genre}
+                    </label>
+                `;
+                genreCheckboxes.appendChild(div);
+            });
+
+            const form = document.getElementById('stats-form');
+            const generateBtn = document.getElementById('generate-btn');
+            const posterPreviewWrapper = document.getElementById('poster-preview-wrapper');
+            const messageBox = document.getElementById('message-box');
+            const omdbAPIKey = "3619fcb2";
+            
+            // Themes
+            const themes = {
+                default: {
+                    posterBgColor: '#fcd34d',
+                    textColor: '#000000',
+                },
+                dark: {
+                    posterBgColor: '#1f2937',
+                    textColor: '#e5e7eb',
+                },
+                vibrant: {
+                    posterBgColor: '#ef4444',
+                    textColor: '#ffffff',
+                }
+            };
+            const themeSelector = document.getElementById('themeSelector');
+            themeSelector.addEventListener('change', (e) => {
+                const theme = themes[e.target.value];
+                document.getElementById('posterBgColor').value = theme.posterBgColor;
+                document.getElementById('textColor').value = theme.textColor;
+            });
+
+            // Local Storage functions
+            function saveState() {
+                const state = {
+                    userName: document.getElementById('userName').value,
+                    episodes: document.getElementById('episodes').value,
+                    movies: document.getElementById('movies').value,
+                    showTimeMonth: document.getElementById('showTimeMonth').value,
+                    showTimeDay: document.getElementById('showTimeDay').value,
+                    showTimeHour: document.getElementById('showTimeHour').value,
+                    movieTimeMonth: document.getElementById('movieTimeMonth').value,
+                    movieTimeDay: document.getElementById('movieTimeDay').value,
+                    movieTimeHour: document.getElementById('movieTimeHour').value,
+                    textColor: document.getElementById('textColor').value,
+                    posterBgColor: document.getElementById('posterBgColor').value,
+                    favMovie1: document.getElementById('favMovie1').value,
+                    favMovie2: document.getElementById('favMovie2').value,
+                    favMovie3: document.getElementById('favMovie3').value,
+                    favShow1: document.getElementById('favShow1').value,
+                    favShow2: document.getElementById('favShow2').value,
+                    favShow3: document.getElementById('favShow3').value,
+                    favAnime1: document.getElementById('favAnime1').value,
+                    favAnime2: document.getElementById('favAnime2').value,
+                    favAnime3: document.getElementById('favAnime3').value,
+                    borderColor: document.getElementById('borderColor').value,
+                    bgOpacity: document.getElementById('bgOpacity').value,
+                    bgBlur: document.getElementById('bgBlur').value,
+                    badge: document.getElementById('badgeSelector').value,
+                    genres: Array.from(document.querySelectorAll('input[name="genres"]:checked')).map(cb => cb.value)
+                };
+                localStorage.setItem('statsData', JSON.stringify(state));
+            }
+
+            function loadState() {
+                const savedState = JSON.parse(localStorage.getItem('statsData'));
+                if (savedState) {
+                    document.getElementById('userName').value = savedState.userName || '';
+                    document.getElementById('episodes').value = savedState.episodes || '';
+                    document.getElementById('movies').value = savedState.movies || '';
+                    document.getElementById('showTimeMonth').value = savedState.showTimeMonth || '';
+                    document.getElementById('showTimeDay').value = savedState.showTimeDay || '';
+                    document.getElementById('showTimeHour').value = savedState.showTimeHour || '';
+                    document.getElementById('movieTimeMonth').value = savedState.movieTimeMonth || '';
+                    document.getElementById('movieTimeDay').value = savedState.movieTimeDay || '';
+                    document.getElementById('movieTimeHour').value = savedState.movieTimeHour || '';
+                    document.getElementById('textColor').value = savedState.textColor || '#000000';
+                    document.getElementById('posterBgColor').value = savedState.posterBgColor || '#fcd34d';
+                    document.getElementById('favMovie1').value = savedState.favMovie1 || '';
+                    document.getElementById('favMovie2').value = savedState.favMovie2 || '';
+                    document.getElementById('favMovie3').value = savedState.favMovie3 || '';
+                    document.getElementById('favShow1').value = savedState.favShow1 || '';
+                    document.getElementById('favShow2').value = savedState.favShow2 || '';
+                    document.getElementById('favShow3').value = savedState.favShow3 || '';
+                    document.getElementById('favAnime1').value = savedState.favAnime1 || '';
+                    document.getElementById('favAnime2').value = savedState.favAnime2 || '';
+                    document.getElementById('favAnime3').value = savedState.favAnime3 || '';
+                    document.getElementById('borderColor').value = savedState.borderColor || '#000000';
+                    document.getElementById('bgOpacity').value = savedState.bgOpacity || '0.5';
+                    document.getElementById('bgBlur').value = savedState.bgBlur || '5';
+                    document.getElementById('badgeSelector').value = savedState.badge || '';
+
+                    // Restore genres
+                    document.querySelectorAll('input[name="genres"]').forEach(cb => cb.checked = false);
+                    if (savedState.genres) {
+                        savedState.genres.forEach(genre => {
+                            const cb = document.querySelector(`input[value="${genre}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+                }
+            }
+            loadState();
+
+            // Gemini API call function with exponential backoff
+            async function callGeminiApi(prompt) {
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                let delay = 1000;
+                const maxRetries = 5;
+
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (result.candidates && result.candidates.length > 0 &&
+                                result.candidates[0].content && result.candidates[0].content.parts &&
+                                result.candidates[0].content.parts.length > 0) {
+                                return result.candidates[0].content.parts[0].text;
+                            } else {
+                                throw new Error('API response format is incorrect.');
+                            }
+                        } else {
+                            if (response.status === 429) {
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                delay *= 2;
+                            } else {
+                                throw new Error(`API returned status code ${response.status}`);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Gemini API call failed:', error);
+                        if (i === maxRetries - 1) throw error;
+                    }
+                }
+                return null;
+            }
+
+            // Gemini API call for badge suggestion
+            document.getElementById('suggest-badge-btn').addEventListener('click', async () => {
+                const favMovies = [document.getElementById('favMovie1').value, document.getElementById('favMovie2').value, document.getElementById('favMovie3').value];
+                const favShows = [document.getElementById('favShow1').value, document.getElementById('favShow2').value, document.getElementById('favShow3').value];
+                const favAnimes = [document.getElementById('favAnime1').value, document.getElementById('favAnime2').value, document.getElementById('favAnime3').value];
+                const selectedGenres = Array.from(document.querySelectorAll('input[name="genres"]:checked')).map(cb => cb.value).join(', ');
+                
+                const allTitles = [...favMovies, ...favShows, ...favAnimes].filter(Boolean).join(', ');
+                
+                if (!allTitles && !selectedGenres) {
+                    displayMessage('Pehle movies, shows, ya genres daalein.', 'error');
+                    return;
+                }
+
+                displayMessage('Tumhare liye badge suggest ho raha hai...', 'success');
+
+                const prompt = `Based on the user's favorite titles (${allTitles}) and genres (${selectedGenres}), suggest a single fitting badge from this list: Binge King, Night Owl, Anime Sensei, Plot Twist Master, Sci-Fi Commander, Drama Slayer, Mystery Hunter, Action Beast, Fantasy Wizard, Rom-Com Pirate, One-Sit Warrior, Cliffhanger Victim, Spoiler Samurai, Villain Lover, Mind-Bender, Horror Survivor, Retro Rewind, Subtitles Samurai, Meme Reactor, Legendary Finisher. Only respond with the badge name and nothing else.`;
+                const suggestedBadge = await callGeminiApi(prompt);
+                
+                if (suggestedBadge) {
+                    const badgeSelector = document.getElementById('badgeSelector');
+                    const normalizedBadge = suggestedBadge.trim();
+                    const badgeExists = Array.from(badgeSelector.options).some(option => option.value === normalizedBadge);
+                    if (badgeExists) {
+                        badgeSelector.value = normalizedBadge;
+                        displayMessage('Badge suggest ho gaya!', 'success');
+                    } else {
+                        displayMessage(`Suggest kiya gaya badge list mein nahi hai: ${normalizedBadge}`, 'error');
+                    }
+                } else {
+                    displayMessage('Badge suggest nahi ho paya.', 'error');
+                }
+            });
+
+            generateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                generateAndShowPreview();
+            });
+
+            function displayMessage(msg, type = 'success') {
+                messageBox.textContent = msg;
+                messageBox.className = `fixed bottom-4 right-4 p-4 rounded-md shadow-lg text-white ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} transition-all duration-300`;
+                messageBox.classList.remove('hidden');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 3000);
+            }
+
+            async function getMoviePoster(title) {
+                try {
+                    const response = await fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${omdbAPIKey}`);
+                    const data = await response.json();
+                    return data.Poster && data.Poster !== 'N/A' ? data.Poster : null;
+                } catch (error) {
+                    console.error("OMDB API se poster nahi mil paya:", error);
+                    return null;
+                }
+            }
+            
+            /**
+             * Applies a blur effect to an element's background image using a canvas.
+             * This ensures the blur is captured when downloading the image.
+             * @param {HTMLElement} element The element to apply the background to.
+             * @param {number} blurAmount The amount of blur in pixels.
+             * @returns {Promise<void>} A promise that resolves when the blur is applied.
+             */
+            function applyBackdropBlur(element, blurAmount) {
+                return new Promise((resolve, reject) => {
+                    const bgImage = element.style.backgroundImage;
+                    if (!bgImage || bgImage === 'none') {
+                        console.log("No background image to blur.");
+                        resolve(); // Resolve immediately if no image
+                        return;
+                    }
+
+                    // Extract URL from 'url("...")'
+                    const imageUrl = bgImage.replace(/^url\(['"]?/, '').replace(/['"]?\)$/, '');
+                    
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous"; // Required for tainted canvas
+                    img.src = imageUrl;
+
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        canvas.width = element.clientWidth;
+                        canvas.height = element.clientHeight;
+                        
+                        // Apply the blur filter to the canvas context
+                        if (blurAmount > 0) {
+                            ctx.filter = `blur(${blurAmount}px)`;
+                        }
+                        
+                        // Simulate background-size: cover to draw the image
+                        const hRatio = canvas.width / img.width;
+                        const vRatio = canvas.height / img.height;
+                        const ratio = Math.max(hRatio, vRatio);
+                        const centerShift_x = (canvas.width - img.width * ratio) / 2;
+                        const centerShift_y = (canvas.height - img.height * ratio) / 2;
+                        
+                        ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+
+                        // Set the new blurred image from canvas as the background
+                        element.style.backgroundImage = `url(${canvas.toDataURL()})`;
+                        resolve(); // Resolve when done
+                    };
+                    img.onerror = (err) => {
+                        console.error("Failed to load image for canvas blurring.", err);
+                        reject(err); // Reject on error
+                    }
+                });
+            }
+
+            async function generateAndShowPreview() {
+                saveState();
+                displayMessage('Poster ban raha hai...', 'success');
+
+                const userName = document.getElementById('userName').value || 'User Name';
+                const badge = document.getElementById('badgeSelector').value || '';
+                const episodes = document.getElementById('episodes').value || '0';
+                const movies = document.getElementById('movies').value || '0';
+                const showTimeMonth = document.getElementById('showTimeMonth').value || '0';
+                const showTimeDay = document.getElementById('showTimeDay').value || '0';
+                const showTimeHour = document.getElementById('showTimeHour').value || '0';
+                const movieTimeMonth = document.getElementById('movieTimeMonth').value || '0';
+                const movieTimeDay = document.getElementById('movieTimeDay').value || '0';
+                const movieTimeHour = document.getElementById('movieTimeHour').value || '0';
+                const textColor = document.getElementById('textColor').value;
+                const posterBgColor = document.getElementById('posterBgColor').value;
+                const borderColor = document.getElementById('borderColor').value;
+                const bgOpacity = document.getElementById('bgOpacity').value;
+                const bgBlur = document.getElementById('bgBlur').value;
+
+                const favMovies = [document.getElementById('favMovie1').value, document.getElementById('favMovie2').value, document.getElementById('favMovie3').value];
+                const favShows = [document.getElementById('favShow1').value, document.getElementById('favShow2').value, document.getElementById('favShow3').value];
+                const favAnimes = [document.getElementById('favAnime1').value, document.getElementById('favAnime2').value, document.getElementById('favAnime3').value];
+                const selectedGenres = Array.from(document.querySelectorAll('input[name="genres"]:checked')).map(cb => cb.value);
+
+                // Update preview poster content
+                document.getElementById('card-name-preview').textContent = userName;
+                document.getElementById('card-badge-preview').textContent = badge ? `(${badge})` : '';
+                document.getElementById('card-episodes-preview').textContent = episodes;
+                document.getElementById('card-movies-preview').textContent = movies;
+                document.getElementById('card-show-time-preview').textContent = `${showTimeMonth}mo ${showTimeDay}d ${showTimeHour}h`;
+                document.getElementById('card-movie-time-preview').textContent = `${movieTimeMonth}mo ${movieTimeDay}d ${movieTimeHour}h`;
+
+                const previewContainer = document.getElementById('stats-card-container-preview');
+                const previewBgOverlay = document.getElementById('stats-card-bg-overlay-preview');
+                previewContainer.style.backgroundColor = posterBgColor;
+                previewContainer.style.color = textColor;
+                
+                previewContainer.style.borderWidth = '8px 8px 8px 8px';
+                previewContainer.style.borderStyle = 'solid';
+                previewContainer.style.borderColor = borderColor;
+
+                previewContainer.querySelectorAll('h2, p, li, span, h4').forEach(el => {
+                    el.style.color = textColor;
+                });
+                
+                const posterBgImage = document.getElementById('posterBgImage').files[0];
+                if (posterBgImage) {
+                    const reader = new FileReader();
+                    // Use a promise to wait for the file reader to load and the blur to be applied
+                    await new Promise((resolve, reject) => {
+                        reader.onload = async (e) => {
+                            try {
+                                previewContainer.style.backgroundImage = `url(${e.target.result})`;
+                                previewBgOverlay.style.backgroundColor = `rgba(0, 0, 0, ${bgOpacity})`;
+                                // Apply the blur and wait for it to complete
+                                await applyBackdropBlur(previewContainer, bgBlur);
+                                resolve();
+                            } catch (error) {
+                                reject(error);
+                            }
+                        };
+                        reader.onerror = (err) => reject(err);
+                        reader.readAsDataURL(posterBgImage);
+                    });
+                } else {
+                    previewContainer.style.backgroundImage = 'none';
+                    previewBgOverlay.style.backgroundColor = 'transparent';
+                }
+
+                const profileImage = document.getElementById('profileImage').files[0];
+                if (profileImage) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => { document.getElementById('user-image-preview').src = e.target.result; };
+                    reader.readAsDataURL(profileImage);
+                } else {
+                    document.getElementById('user-image-preview').src = "https://placehold.co/180x180/4b5563/ffffff?text=Image";
+                }
+
+                const createPosterListItem = async (title, listElement) => {
+                    if (title) {
+                        const posterUrl = await getMoviePoster(title);
+                        const li = document.createElement('li');
+                        li.className = "flex items-center space-x-2";
+                        if (posterUrl) {
+                            li.innerHTML = `<img src="${posterUrl}" alt="${title}" class="w-8 h-12 object-cover rounded-md shadow-md"><span>${title}</span>`;
+                        } else {
+                            li.innerHTML = `<span>${title}</span>`;
+                        }
+                        listElement.appendChild(li);
+                    }
+                };
+
+                const favMoviesList = document.getElementById('card-fav-movies-preview');
+                const favShowsList = document.getElementById('card-fav-shows-preview');
+                const favAnimesList = document.getElementById('card-fav-anime-preview');
+
+                favMoviesList.innerHTML = '';
+                favShowsList.innerHTML = '';
+                favAnimesList.innerHTML = '';
+
+                await Promise.all([
+                    ...favMovies.map(title => createPosterListItem(title, favMoviesList)),
+                    ...favShows.map(title => createPosterListItem(title, favShowsList)),
+                    ...favAnimes.map(title => createPosterListItem(title, favAnimesList))
+                ]);
+                
+                const genresList = document.getElementById('card-genres-preview');
+                genresList.innerHTML = '';
+                selectedGenres.forEach(genre => {
+                    const span = document.createElement('span');
+                    span.className = 'px-2 py-1 rounded-full text-xs font-semibold bg-yellow-500 text-gray-900';
+                    span.textContent = genre;
+                    genresList.appendChild(span);
+                });
+
+                posterPreviewWrapper.classList.remove('hidden');
+                posterPreviewWrapper.scrollIntoView({ behavior: 'smooth' });
+                displayMessage('Poster ban gaya hai!', 'success');
+            }
+        });
+    </script>
+</body>
+</html>
